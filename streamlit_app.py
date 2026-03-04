@@ -50,14 +50,14 @@ st.markdown("""
     .article-title { font-size: 1.25rem; font-weight: 700; line-height: 1.4; color: #e0f2fe; margin-bottom: 12px; }
     .article-desc { color: #cbd5e1; font-size: 0.95rem; line-height: 1.55; }
     .stLinkButton > button { background: linear-gradient(90deg, #3b82f6, #60a5fa) !important; border-radius: 9999px !important; font-weight: 600 !important; }
-    .footer-tabs { margin-top: 2rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 15px; }
+    .footer-nav { margin-top: 2rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 15px; text-align: center; }
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown("""
 <div class="main-header">
     <h1 class="title"><span class="live-dot"></span> GLOBALTREND AI</h1>
-    <p style="text-align:center; color:#bae6fd; margin-top:8px; font-size:1.1rem;">6-Page Rolling History (12+ hours) • Latest news always on top</p>
+    <p style="text-align:center; color:#bae6fd; margin-top:8px; font-size:1.1rem;">6-Page Rolling History (12+ hours) • All times in your local timezone</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -78,7 +78,7 @@ with st.sidebar:
             st.toast("All articles marked as read forever!", icon="✅")
     
     st.divider()
-    st.caption("🌍 6-page rolling history (12+ hours storage)")
+    st.caption("🌍 6-page rolling history • Navigation moved to footer")
 
 try:
     from streamlit_autorefresh import st_autorefresh
@@ -86,7 +86,7 @@ try:
 except:
     st.sidebar.warning("pip install streamlit-autorefresh")
 
-# ====================== 13 RELIABLE FEEDS ======================
+# ====================== FEEDS ======================
 FEEDS = [
     {"name": "BBC World", "url": "https://feeds.bbci.co.uk/news/world/rss.xml"},
     {"name": "Reuters World", "url": "https://feeds.reuters.com/Reuters/worldNews"},
@@ -109,11 +109,15 @@ def get_article_id(article):
     return hashlib.md5((article.get('title','') + article.get('link','')).encode()).hexdigest()[:12]
 
 def get_exact_time(article):
-    raw = article.get('published') or article.get('pubDate') or article.get('updated')
-    if raw:
-        return raw.replace(' GMT', ' UTC').replace('+0000', ' UTC').strip()[:60]
     parsed = article.get('published_parsed')
-    return time.strftime("%d %b %Y • %H:%M UTC", parsed) if parsed else "Date not available"
+    if parsed:
+        try:
+            local_time = time.localtime(time.mktime(parsed))
+            return time.strftime("%d %b %Y • %H:%M", local_time)
+        except:
+            pass
+    raw = article.get('published') or article.get('pubDate') or article.get('updated')
+    return raw.replace(' GMT', '').replace(' UTC', '').strip()[:60] if raw else "Date not available"
 
 def fetch_single_feed(feed):
     try:
@@ -165,7 +169,7 @@ for article in latest:
 if new_articles_list:
     st.session_state.all_news = new_articles_list + st.session_state.all_news
 
-max_articles = articles_per_page * 6   # ← Now 6 pages (12+ hours)
+max_articles = articles_per_page * 6
 if len(st.session_state.all_news) > max_articles:
     st.session_state.all_news = st.session_state.all_news[:max_articles]
 
@@ -208,39 +212,28 @@ for i, article in enumerate(current_page_articles):
         if article.get("link"):
             st.link_button("Read Full Story →", article["link"], use_container_width=True)
 
-# ====================== FOOTER PAGE TABS (6 pages) ======================
+# ====================== FOOTER WITH PREV / CURRENT / NEXT ======================
 st.divider()
 st.markdown('<div class="footer-tabs">', unsafe_allow_html=True)
-row1 = st.columns(3)
-with row1[0]:
-    if st.button("📄 Page 1", use_container_width=True, type="primary" if page == 1 else "secondary"):
-        st.session_state.current_page = 1
-        st.rerun()
-with row1[1]:
-    if st.button("📄 Page 2", use_container_width=True, type="primary" if page == 2 else "secondary"):
-        st.session_state.current_page = 2
-        st.rerun()
-with row1[2]:
-    if st.button("📄 Page 3", use_container_width=True, type="primary" if page == 3 else "secondary"):
-        st.session_state.current_page = 3
+
+col1, col2, col3 = st.columns([1, 2, 1])
+
+with col1:
+    if st.button("← Previous", use_container_width=True, disabled=(page == 1)):
+        st.session_state.current_page = page - 1
         st.rerun()
 
-row2 = st.columns(3)
-with row2[0]:
-    if st.button("📄 Page 4", use_container_width=True, type="primary" if page == 4 else "secondary"):
-        st.session_state.current_page = 4
+with col2:
+    st.markdown(f"<h3 style='text-align:center; margin:0;'>Page {page} of 6</h3>", unsafe_allow_html=True)
+
+with col3:
+    if st.button("Next →", use_container_width=True, disabled=(page == 6)):
+        st.session_state.current_page = page + 1
         st.rerun()
-with row2[1]:
-    if st.button("📄 Page 5", use_container_width=True, type="primary" if page == 5 else "secondary"):
-        st.session_state.current_page = 5
-        st.rerun()
-with row2[2]:
-    if st.button("📄 Page 6", use_container_width=True, type="primary" if page == 6 else "secondary"):
-        st.session_state.current_page = 6
-        st.rerun()
+
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Debug + AI
+# Debug + AI Digest
 with st.expander("🔧 History Status", expanded=False):
     st.write(f"**Total stored:** {len(st.session_state.all_news)} / {max_articles} (12+ hours)")
 
@@ -260,4 +253,4 @@ if groq_api_key and st.session_state.all_news and st.button("✨ Generate Smart 
 else:
     st.info("Add your free Groq API key in the sidebar for instant AI-powered insights")
 
-st.caption("✅ Now 6 pages (12+ hours storage) • Latest news on top • Read status saved forever • All other features unchanged")
+st.caption("✅ Footer simplified with Previous / Current Page / Next buttons • All other features unchanged")
