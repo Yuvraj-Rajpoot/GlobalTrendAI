@@ -2,12 +2,33 @@ import streamlit as st
 import feedparser
 import requests
 import re
+import json
+import os
 from datetime import datetime
 import hashlib
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 st.set_page_config(page_title="GlobalTrend AI", layout="wide", page_icon="🌍")
+
+# ====================== PERMANENT READ STORAGE ======================
+READ_FILE = "read_history.json"
+
+def load_read_ids():
+    if os.path.exists(READ_FILE):
+        try:
+            with open(READ_FILE, "r", encoding="utf-8") as f:
+                return set(json.load(f))
+        except:
+            return set()
+    return set()
+
+def save_read_ids(read_ids):
+    try:
+        with open(READ_FILE, "w", encoding="utf-8") as f:
+            json.dump(list(read_ids), f)
+    except:
+        pass
 
 # ====================== PREMIUM CSS ======================
 st.markdown("""
@@ -29,13 +50,14 @@ st.markdown("""
     .article-title { font-size: 1.25rem; font-weight: 700; line-height: 1.4; color: #e0f2fe; margin-bottom: 12px; }
     .article-desc { color: #cbd5e1; font-size: 0.95rem; line-height: 1.55; }
     .stLinkButton > button { background: linear-gradient(90deg, #3b82f6, #60a5fa) !important; border-radius: 9999px !important; font-weight: 600 !important; }
+    .footer-tabs { margin-top: 2rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 15px; }
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown("""
 <div class="main-header">
     <h1 class="title"><span class="live-dot"></span> GLOBALTREND AI</h1>
-    <p style="text-align:center; color:#bae6fd; margin-top:8px; font-size:1.1rem;">3-Page Rolling History • Latest news always on top</p>
+    <p style="text-align:center; color:#bae6fd; margin-top:8px; font-size:1.1rem;">6-Page Rolling History (12+ hours) • Latest news always on top</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -46,18 +68,17 @@ with st.sidebar:
     refresh_seconds = st.slider("Auto-refresh every", 30, 180, 60, step=15)
     groq_api_key = st.text_input("Groq API Key (optional)", type="password")
     
-    page = st.radio("📄 Page", [1, 2, 3], horizontal=True, label_visibility="collapsed")
-    
     if st.button("🔄 Refresh View Now", use_container_width=True, type="primary"):
         st.rerun()
     
     if st.button("✅ Mark ALL as Read", use_container_width=True, type="secondary"):
         if "all_news" in st.session_state:
             st.session_state.read_ids.update(a.get("article_id") for a in st.session_state.all_news)
-            st.toast("All articles marked as read!", icon="✅")
+            save_read_ids(st.session_state.read_ids)
+            st.toast("All articles marked as read forever!", icon="✅")
     
     st.divider()
-    st.caption("🌍 Rolling 3-page history • Latest on top")
+    st.caption("🌍 6-page rolling history (12+ hours storage)")
 
 try:
     from streamlit_autorefresh import st_autorefresh
@@ -65,7 +86,7 @@ try:
 except:
     st.sidebar.warning("pip install streamlit-autorefresh")
 
-# ====================== FEEDS ======================
+# ====================== 13 RELIABLE FEEDS ======================
 FEEDS = [
     {"name": "BBC World", "url": "https://feeds.bbci.co.uk/news/world/rss.xml"},
     {"name": "Reuters World", "url": "https://feeds.reuters.com/Reuters/worldNews"},
@@ -79,6 +100,7 @@ FEEDS = [
     {"name": "Euronews", "url": "https://www.euronews.com/rss/rss_en_world.xml"},
     {"name": "NY Times World", "url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"},
     {"name": "News18 World", "url": "https://www.news18.com/rss/world.xml"},
+    {"name": "Moscow Times", "url": "https://www.themoscowtimes.com/rss/news"},
 ]
 
 headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"}
@@ -109,7 +131,7 @@ def fetch_single_feed(feed):
 @st.cache_data(ttl=120, show_spinner=False)
 def fetch_latest_news():
     all_entries = []
-    with ThreadPoolExecutor(max_workers=12) as executor:
+    with ThreadPoolExecutor(max_workers=13) as executor:
         future_to_feed = {executor.submit(fetch_single_feed, feed): feed for feed in FEEDS}
         for future in as_completed(future_to_feed):
             entries = future.result()
@@ -123,15 +145,13 @@ def fetch_latest_news():
             seen.add(aid)
             unique.append(item)
     unique.sort(key=lambda x: x.get('published_parsed', (0,0,0,0,0,0)), reverse=True)
-    return unique[:40]
+    return unique[:50]
 
-# ====================== 3-PAGE ROLLING HISTORY ======================
-if "all_news" not in st.session_state:
-    st.session_state.all_news = []
-if "read_ids" not in st.session_state:
-    st.session_state.read_ids = set()
-if "previous_ids" not in st.session_state:
-    st.session_state.previous_ids = set()
+# ====================== 6-PAGE ROLLING HISTORY ======================
+if "all_news" not in st.session_state: st.session_state.all_news = []
+if "read_ids" not in st.session_state: st.session_state.read_ids = load_read_ids()
+if "previous_ids" not in st.session_state: st.session_state.previous_ids = set()
+if 'current_page' not in st.session_state: st.session_state.current_page = 1
 
 latest = fetch_latest_news()
 
@@ -145,7 +165,7 @@ for article in latest:
 if new_articles_list:
     st.session_state.all_news = new_articles_list + st.session_state.all_news
 
-max_articles = articles_per_page * 3
+max_articles = articles_per_page * 6   # ← Now 6 pages (12+ hours)
 if len(st.session_state.all_news) > max_articles:
     st.session_state.all_news = st.session_state.all_news[:max_articles]
 
@@ -155,9 +175,10 @@ if len(new_articles_list) > 0 and len(st.session_state.previous_ids) > 0:
 st.session_state.previous_ids = {a.get("article_id") for a in st.session_state.all_news}
 
 # ====================== DISPLAY ======================
+page = st.session_state.current_page
 current_page_articles = st.session_state.all_news[(page-1)*articles_per_page : page*articles_per_page]
 
-st.subheader(f"🌐 Page {page}/3 • Live Trending Worldwide • {datetime.now().strftime('%H:%M:%S')} • {len(st.session_state.all_news)}/{max_articles} stored • {sum(1 for a in st.session_state.all_news if a.get('article_id') not in st.session_state.read_ids)} unread")
+st.subheader(f"🌐 Page {page}/6 • Live Trending Worldwide • {datetime.now().strftime('%H:%M:%S')} • {len(st.session_state.all_news)}/{max_articles} stored • {sum(1 for a in st.session_state.all_news if a.get('article_id') not in st.session_state.read_ids)} unread")
 
 cols = st.columns(3)
 for i, article in enumerate(current_page_articles):
@@ -180,17 +201,49 @@ for i, article in enumerate(current_page_articles):
             if is_unread:
                 if st.button("✓ Mark as Read", key=f"read_{aid}_{page}", use_container_width=True):
                     st.session_state.read_ids.add(aid)
-                    st.toast("✅ Marked as read!", icon="✅")
+                    save_read_ids(st.session_state.read_ids)
+                    st.toast("✅ Marked as read forever!", icon="✅")
                     st.rerun()
         
         if article.get("link"):
             st.link_button("Read Full Story →", article["link"], use_container_width=True)
 
-with st.expander("🔧 History Status", expanded=False):
-    st.write(f"**Total stored:** {len(st.session_state.all_news)} / {max_articles}")
-    st.write(f"**Current page:** {page} ({len(current_page_articles)} articles)")
+# ====================== FOOTER PAGE TABS (6 pages) ======================
+st.divider()
+st.markdown('<div class="footer-tabs">', unsafe_allow_html=True)
+row1 = st.columns(3)
+with row1[0]:
+    if st.button("📄 Page 1", use_container_width=True, type="primary" if page == 1 else "secondary"):
+        st.session_state.current_page = 1
+        st.rerun()
+with row1[1]:
+    if st.button("📄 Page 2", use_container_width=True, type="primary" if page == 2 else "secondary"):
+        st.session_state.current_page = 2
+        st.rerun()
+with row1[2]:
+    if st.button("📄 Page 3", use_container_width=True, type="primary" if page == 3 else "secondary"):
+        st.session_state.current_page = 3
+        st.rerun()
 
-# AI Digest
+row2 = st.columns(3)
+with row2[0]:
+    if st.button("📄 Page 4", use_container_width=True, type="primary" if page == 4 else "secondary"):
+        st.session_state.current_page = 4
+        st.rerun()
+with row2[1]:
+    if st.button("📄 Page 5", use_container_width=True, type="primary" if page == 5 else "secondary"):
+        st.session_state.current_page = 5
+        st.rerun()
+with row2[2]:
+    if st.button("📄 Page 6", use_container_width=True, type="primary" if page == 6 else "secondary"):
+        st.session_state.current_page = 6
+        st.rerun()
+st.markdown('</div>', unsafe_allow_html=True)
+
+# Debug + AI
+with st.expander("🔧 History Status", expanded=False):
+    st.write(f"**Total stored:** {len(st.session_state.all_news)} / {max_articles} (12+ hours)")
+
 st.divider()
 st.subheader("🤖 AI Global Intelligence Digest")
 if groq_api_key and st.session_state.all_news and st.button("✨ Generate Smart World Digest", use_container_width=True):
@@ -207,4 +260,4 @@ if groq_api_key and st.session_state.all_news and st.button("✨ Generate Smart 
 else:
     st.info("Add your free Groq API key in the sidebar for instant AI-powered insights")
 
-st.caption("✅ Latest news on top • Live refresh timestamp restored • 3-page rolling history")
+st.caption("✅ Now 6 pages (12+ hours storage) • Latest news on top • Read status saved forever • All other features unchanged")
