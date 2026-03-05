@@ -50,7 +50,7 @@ st.markdown("""
     .article-title { font-size: 1.25rem; font-weight: 700; line-height: 1.4; color: #e0f2fe; margin-bottom: 12px; }
     .article-desc { color: #cbd5e1; font-size: 0.95rem; line-height: 1.55; }
     .stLinkButton > button { background: linear-gradient(90deg, #3b82f6, #60a5fa) !important; border-radius: 9999px !important; font-weight: 600 !important; }
-    .footer-nav { margin-top: 2rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 15px; text-align: center; }
+    .footer-tabs { margin-top: 2rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 15px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -78,7 +78,7 @@ with st.sidebar:
             st.toast("All articles marked as read forever!", icon="✅")
     
     st.divider()
-    st.caption("🌍 6-page rolling history • Navigation moved to footer")
+    st.caption("🌍 6-page rolling history • All times in your local machine timezone")
 
 try:
     from streamlit_autorefresh import st_autorefresh
@@ -182,7 +182,7 @@ st.session_state.previous_ids = {a.get("article_id") for a in st.session_state.a
 page = st.session_state.current_page
 current_page_articles = st.session_state.all_news[(page-1)*articles_per_page : page*articles_per_page]
 
-st.subheader(f"🌐 Page {page}/6 • Live Trending Worldwide • {datetime.now().strftime('%H:%M:%S')} • {len(st.session_state.all_news)}/{max_articles} stored • {sum(1 for a in st.session_state.all_news if a.get('article_id') not in st.session_state.read_ids)} unread")
+st.subheader(f"🌐 Page {page}/6 • Live Trending Worldwide • Refreshed at {datetime.now().strftime('%d %b %Y • %H:%M:%S')} • {len(st.session_state.all_news)}/{max_articles} stored • {sum(1 for a in st.session_state.all_news if a.get('article_id') not in st.session_state.read_ids)} unread")
 
 cols = st.columns(3)
 for i, article in enumerate(current_page_articles):
@@ -253,4 +253,4 @@ if groq_api_key and st.session_state.all_news and st.button("✨ Generate Smart 
 else:
     st.info("Add your free Groq API key in the sidebar for instant AI-powered insights")
 
-st.caption("✅ Footer simplified with Previous / Current Page / Next buttons • All other features unchanged")
+st.caption("✅ All times now in your local timezone • 6 pages (12+ hours) • Read status saved permanently")
