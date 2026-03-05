@@ -57,7 +57,7 @@ st.markdown("""
 st.markdown("""
 <div class="main-header">
     <h1 class="title"><span class="live-dot"></span> GLOBALTREND AI</h1>
-    <p style="text-align:center; color:#bae6fd; margin-top:8px; font-size:1.1rem;">6-Page Rolling History (12+ hours) • All times in your local timezone</p>
+    <p style="text-align:center; color:#bae6fd; margin-top:8px; font-size:1.1rem;">Real time Latest trending news from multiple respected newspapers on a single platform</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -77,8 +77,7 @@ with st.sidebar:
             save_read_ids(st.session_state.read_ids)
             st.toast("All articles marked as read forever!", icon="✅")
     
-    st.divider()
-    st.caption("🌍 6-page rolling history • All times in your local timezone")
+
 
 try:
     from streamlit_autorefresh import st_autorefresh
@@ -86,7 +85,7 @@ try:
 except:
     st.sidebar.warning("pip install streamlit-autorefresh")
 
-# ====================== 13 RELIABLE FEEDS ======================
+# ====================== FEEDS ======================
 FEEDS = [
     {"name": "BBC World", "url": "https://feeds.bbci.co.uk/news/world/rss.xml"},
     {"name": "Reuters World", "url": "https://feeds.reuters.com/Reuters/worldNews"},
@@ -182,27 +181,7 @@ st.session_state.previous_ids = {a.get("article_id") for a in st.session_state.a
 page = st.session_state.current_page
 current_page_articles = st.session_state.all_news[(page-1)*articles_per_page : page*articles_per_page]
 
-st.subheader(f"🌐 Page {page}/6 • Live Trending Worldwide • {len(st.session_state.all_news)}/{max_articles} stored • {sum(1 for a in st.session_state.all_news if a.get('article_id') not in st.session_state.read_ids)} unread")
-
-# ====================== LOCAL BROWSER TIME IN HEADING ======================
-st.components.v1.html("""
-<div style="text-align:center; margin:10px 0; color:#bae6fd; font-weight:500;">
-    Refreshed at: <span id="localTime"></span>
-</div>
-<script>
-function updateLocalTime() {
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        second: '2-digit',
-        hour12: false 
-    });
-    document.getElementById('localTime').textContent = timeStr;
-}
-updateLocalTime();
-</script>
-""", height=50)
+st.subheader(f"🌐 Page {page}/6 • Live Trending Worldwide • {datetime.now().strftime('%H:%M:%S')} • {len(st.session_state.all_news)}/{max_articles} stored • {sum(1 for a in st.session_state.all_news if a.get('article_id') not in st.session_state.read_ids)} unread")
 
 cols = st.columns(3)
 for i, article in enumerate(current_page_articles):
@@ -234,26 +213,30 @@ for i, article in enumerate(current_page_articles):
 
 # ====================== FOOTER WITH PREV / CURRENT / NEXT ======================
 st.divider()
-st.markdown('<div class="footer-nav">', unsafe_allow_html=True)
+st.markdown('<div class="footer-tabs">', unsafe_allow_html=True)
+
 col1, col2, col3 = st.columns([1, 2, 1])
+
 with col1:
     if st.button("← Previous", use_container_width=True, disabled=(page == 1)):
         st.session_state.current_page = page - 1
         st.rerun()
+
 with col2:
     st.markdown(f"<h3 style='text-align:center; margin:0;'>Page {page} of 6</h3>", unsafe_allow_html=True)
+
 with col3:
     if st.button("Next →", use_container_width=True, disabled=(page == 6)):
         st.session_state.current_page = page + 1
         st.rerun()
+
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Debug + AI
-with st.expander("🔧 History Status", expanded=False):
-    st.write(f"**Total stored:** {len(st.session_state.all_news)} / {max_articles} (12+ hours)")
+# Debug + AI Digest
+
 
 st.divider()
-st.subheader("🤖 AI Global Intelligence Digest")
+st.subheader("🤖 GlobalTrend AI")
 if groq_api_key and st.session_state.all_news and st.button("✨ Generate Smart World Digest", use_container_width=True):
     try:
         from groq import Groq
@@ -266,6 +249,24 @@ if groq_api_key and st.session_state.all_news and st.button("✨ Generate Smart 
     except Exception as e:
         st.error(f"AI Error: {e}")
 else:
-    st.info("Add your free Groq API key in the sidebar for instant AI-powered insights")
-
-st.caption("✅ All times (heading + posts) now in your local timezone • 6 pages • Read status saved forever")
+    st.markdown(
+    """
+    <div style="
+        background: linear-gradient(90deg, #1e3a8a, #3b82f6, #60a5fa);
+        padding: 0.5rem 1rem;
+        border-radius: 30px;
+        margin: 1.5rem 0;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    ">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 1.1em;">
+            <span>~ Yuvraj Rajpoot</span>
+            <a href="https://www.instagram.com/_yuvraj__rajpoot_/">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" 
+                     style="height: 1.3em; width: auto; vertical-align: middle; filter: brightness(1.1);">
+            </a>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
