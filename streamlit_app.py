@@ -275,7 +275,7 @@ with tab_news:
 # ====================== LIVE TV TAB ======================
 with tab_live:
     st.title("📺 Live YouTube TV Streams")
-    st.caption("All streams using verified direct embeds")
+    st.caption("Just click on the youtube sign and enjoy multiple live tv channels on the same page...")
     cols = st.columns(2)
     live_channels = [
         ("Al Jazeera English Live", "https://www.youtube.com/embed/gCNeDWCI0vo"),
