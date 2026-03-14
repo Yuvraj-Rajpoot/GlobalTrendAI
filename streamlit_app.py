@@ -63,7 +63,8 @@ st.markdown("""
 st.markdown("""
 <div class="main-header">
     <h1 class="title"><span class="live-dot"></span> GLOBALTREND AI</h1>
-    <p style="text-align:center; color:#bae6fd; margin-top:8px; font-size:1.1rem;">everything you need to be aware of, is on a single platform (news+live-tv+market-analysis+world-monitor+predictions)</p>
+    <p style="text-align:center; color:#bae6fd; margin-top:8px; font-size:1.1rem;">Everything you need to stay aware — all in one powerful platform.
+News. Live TV. Market intelligence. World monitoring. Predictions. 🌍📊📡</p>
 </div>
 """, unsafe_allow_html=True)
 
