@@ -83,7 +83,7 @@ with tab_news:
         st.header("⚙️ Dashboard Controls")
         articles_per_page = st.slider("Articles per page", 6, 24, 18)
         refresh_seconds = st.slider("Auto-refresh every", 30, 180, 60, step=15)
-        groq_api_key = st.text_input("Groq API Key (optional)", type="password")
+        groq_api_key = st.text_input("", type="password")
        
         if st.button("🔄 Refresh View Now", use_container_width=True, type="primary"):
             st.rerun()
@@ -98,7 +98,7 @@ with tab_news:
         from streamlit_autorefresh import st_autorefresh
         st_autorefresh(interval=refresh_seconds * 1000, limit=None, key="newsrefresh")
     except:
-        st.sidebar.warning("pip install streamlit-autorefresh")
+        st.sidebar.warning("~ Yuvraj Rajpoot")
 
     FEEDS = [
         {"name": "BBC World", "url": "https://feeds.bbci.co.uk/news/world/rss.xml"},
