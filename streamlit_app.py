@@ -63,8 +63,7 @@ st.markdown("""
 st.markdown("""
 <div class="main-header">
     <h1 class="title"><span class="live-dot"></span> GLOBALTREND AI</h1>
-    <p style="text-align:center; color:#bae6fd; margin-top:8px; font-size:1.1rem;">Everything you need to stay aware — all in one powerful platform.
-News. Live TV. Market intelligence. World monitoring. Predictions. 🌍📊📡</p>
+    <p style="text-align:center; color:#bae6fd; margin-top:8px; font-size:1.1rem;">Everything you need to stay aware — all in one powerful platform. News. Live TV. Market intelligence. World monitoring. Predictions. 🌍📊📡</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -84,6 +83,7 @@ with tab_news:
         st.header("⚙️ Dashboard Controls")
         articles_per_page = st.slider("Articles per page", 6, 24, 18)
         refresh_seconds = st.slider("Auto-refresh every", 30, 180, 60, step=15)
+        groq_api_key = st.text_input("Groq API Key (optional)", type="password")
        
         if st.button("🔄 Refresh View Now", use_container_width=True, type="primary"):
             st.rerun()
@@ -93,12 +93,12 @@ with tab_news:
                 st.session_state.read_ids.update(a.get("article_id") for a in st.session_state.all_news)
                 save_read_ids(st.session_state.read_ids)
                 st.toast("All articles marked as read forever!", icon="✅")
-
+       
     try:
         from streamlit_autorefresh import st_autorefresh
         st_autorefresh(interval=refresh_seconds * 1000, limit=None, key="newsrefresh")
     except:
-        st.sidebar.warning("~ Yuvraj Rajpoot")
+        st.sidebar.warning("pip install streamlit-autorefresh")
 
     FEEDS = [
         {"name": "BBC World", "url": "https://feeds.bbci.co.uk/news/world/rss.xml"},
