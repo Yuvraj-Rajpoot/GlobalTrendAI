@@ -1,2 +1,7 @@
 streamlit
 feedparser
+requests
+pandas
+yfinance
+folium
+streamlit-folium
