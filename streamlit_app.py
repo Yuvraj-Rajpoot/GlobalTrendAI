@@ -93,8 +93,12 @@ with tab_news:
                 st.session_state.read_ids.update(a.get("article_id") for a in st.session_state.all_news)
                 save_read_ids(st.session_state.read_ids)
                 st.toast("All articles marked as read forever!", icon="✅")
-       
 
+    try:
+        from streamlit_autorefresh import st_autorefresh
+        st_autorefresh(interval=refresh_seconds * 1000, limit=None, key="newsrefresh")
+    except:
+        st.sidebar.warning("")
 
     FEEDS = [
         {"name": "BBC World", "url": "https://feeds.bbci.co.uk/news/world/rss.xml"},
