@@ -84,7 +84,6 @@ with tab_news:
         st.header("⚙️ Dashboard Controls")
         articles_per_page = st.slider("Articles per page", 6, 24, 18)
         refresh_seconds = st.slider("Auto-refresh every", 30, 180, 60, step=15)
-        groq_api_key = st.text_input("Groq API Key (optional)", type="password")
        
         if st.button("🔄 Refresh View Now", use_container_width=True, type="primary"):
             st.rerun()
