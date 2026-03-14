@@ -97,7 +97,8 @@ with tab_news:
     try:
         from streamlit_autorefresh import st_autorefresh
         st_autorefresh(interval=refresh_seconds * 1000, limit=None, key="newsrefresh")
-
+    except:
+        st.sidebar.warning("pip install streamlit-autorefresh")
 
     FEEDS = [
         {"name": "BBC World", "url": "https://feeds.bbci.co.uk/news/world/rss.xml"},
