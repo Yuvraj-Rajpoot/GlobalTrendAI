@@ -409,7 +409,7 @@ with tab_map:
             # ==================== PERFECT MAP (no scroll, whole world fits exactly) ====================
             m = folium.Map(
                 location=[20, 0],
-                zoom_start=2,
+                zoom_start=1,
                 tiles="CartoDB dark_matter",
                 min_zoom=1,
                 max_zoom=18,
