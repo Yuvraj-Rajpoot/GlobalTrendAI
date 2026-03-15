@@ -433,13 +433,11 @@ with tab_map:
                 radius = max(8, min(25, 8 + data["count"] * 2.5))
                
                 popup_html = f"""
-                <div style="min-width:280px; font-family: sans-serif;">
+                <div style="min-width:0px; font-family: sans-serif;">
                     <h4 style="margin:0; color:#facc15;">{data['country']}</h4>
-                    <p><strong>News Activity Level:</strong> {data['count']} stories</p>
-                    <p><strong>Sources:</strong> {', '.join(list(data['sources'])[:4])}</p>
-                    <hr style="margin:8px 0;">
+                    <hr style="margin:0px 0;">
                     <strong>Type of Activity Right Now:</strong><br>
-                    {'<br>'.join([f"• {h}" for h in data["headlines"][:4]])}
+                    {'<br>'.join([f"• {h}" for h in data["headlines"][:1]])}
                 </div>
                 """
                
