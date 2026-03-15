@@ -33,7 +33,7 @@ def save_read_ids(read_ids):
     except:
         pass
 
-# ====================== PREMIUM CSS (with perfect world map fix) ======================
+# ====================== PREMIUM CSS (old map fixes + working touch fix) ======================
 st.markdown("""
 <style>
     .stApp { background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%); color: #e0e0ff; }
@@ -57,8 +57,11 @@ st.markdown("""
     .prediction-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(251,191,36,0.3); border-radius: 16px; padding: 1.4rem; margin-bottom: 1rem; transition: all 0.3s; }
     .prediction-card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(251,191,36,0.2); }
 
-    /* ====================== PERFECT WORLD ACTIVITY MAP CSS ====================== */
-    /* No scrolling + whole world fills the container exactly */
+    /* ====================== WORLD MAP - ALL OLD FIXES RESTORED + WORKING MOBILE TOUCH FIX ====================== */
+    .stFolium {
+        overscroll-behavior: contain !important;
+        touch-action: pan-x pan-y pinch-zoom !important;
+    }
     .leaflet-container {
         width: 100% !important;
         height: 100% !important;
@@ -66,13 +69,14 @@ st.markdown("""
         box-shadow: 0 25px 50px -12px rgb(59 130 246 / 0.4) !important;
         overflow: hidden !important;
         background: #0f0f1e !important;
+        touch-action: pan-x pan-y pinch-zoom !important;
+        overscroll-behavior: contain !important;
     }
-    div[data-testid="stMarkdownContainer"] > div > div > div > div > iframe,
-    .stFolium,
-    .leaflet-container {
+    div[data-testid="stMarkdownContainer"] > div > div > div > div > iframe {
         max-width: 100% !important;
         max-height: 100% !important;
         overflow: hidden !important;
+        touch-action: pan-x pan-y pinch-zoom !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -131,7 +135,7 @@ with tab_news:
         {"name": "News18 World", "url": "https://www.news18.com/rss/world.xml"},
         {"name": "Moscow Times", "url": "https://www.themoscowtimes.com/rss/news"},
     ]
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"}
     def get_article_id(article):
         return hashlib.md5((article.get('title','') + article.get('link','')).encode()).hexdigest()[:12]
     def get_exact_time(article):
@@ -354,10 +358,10 @@ with tab_trending:
     else:
         st.info("Waiting for news... Click Refresh View Now once")
 
-# ====================== WORLD NEWS ACTIVITY MAP TAB (PERFECTLY IMPROVED) ======================
+# ====================== WORLD NEWS ACTIVITY MAP TAB (EXACTLY AS BEFORE + TOUCH FIXED) ======================
 with tab_map:
     st.title("🌍 Real-Time World News Activity Map")
-    st.caption("Signals show news intensity (🟢 Low → 🔴 High) • Click any signal → small popup with exact activity type • Updates live on every refresh")
+    st.caption("Signals show news intensity (🟢 Low → 🔴 High) • Click any signal → small popup • Updates live")
    
     COUNTRY_COORDS = {
         "USA": [37.0902, -95.7129], "United States": [37.0902, -95.7129], "Washington": [38.9072, -77.0369],
@@ -406,19 +410,20 @@ with tab_map:
                 location_groups[key]["headlines"].append(title[:120])
                 location_groups[key]["sources"].add(article.get("source_name", "News"))
         if location_groups:
-            # ==================== PERFECT MAP (no scroll, whole world fits exactly) ====================
+            # ==================== EXACT SAME WORKING MAP AS BEFORE ====================
             m = folium.Map(
                 location=[20, 0],
-                zoom_start=2,
+                zoom_start=2.2,
                 tiles="CartoDB dark_matter",
                 min_zoom=1,
                 max_zoom=18,
-                max_bounds=[[-90, -180], [90, 180]],      # prevents repeating countries
-                max_bounds_viscosity=1.0
+                max_bounds=[[-85, -180], [85, 180]],
+                max_bounds_viscosity=1.0,
+                worldCopyJump=False
             )
-           
+
             max_count = max(g["count"] for g in location_groups.values()) or 1
-           
+
             for data in location_groups.values():
                 intensity = data["count"] / max_count
                 if intensity < 0.25:
@@ -454,10 +459,9 @@ with tab_map:
                     weight=3
                 ).add_to(m)
            
-            # Force the entire world to exactly fill the container (max zoom-out = container size)
-            m.fit_bounds([[-90, -180], [90, 180]], padding=(0.02, 0.02))
-           
-            st_folium(m, width="100%", height=500, returned_objects=["last_object_clicked"])
+            m.fit_bounds([[-85, -180], [85, 180]], padding=(5, 5))
+
+            st_folium(m, width="100%", height=680, returned_objects=["last_object_clicked"])
            
             st.caption("🟢 = Low activity 🟡 = Medium 🟠 = High 🔴 = Very High • Click any signal to open the activity popup")
         else:
@@ -471,66 +475,16 @@ with tab_predictions:
     st.caption("Actual predictions made by leading economists & institutions (Goldman Sachs, Morgan Stanley, ABA, J.P. Morgan, IMF & more) as of March 2026 • Sourced directly from news & reports • No AI generation")
    
     real_forecasts = [
-        {
-            "rank": 1,
-            "source": "Goldman Sachs Research (Feb 2026)",
-            "prediction": "US GDP to grow 2.8% in 2026 (above consensus 2.2%)",
-            "detail": "Global GDP forecast at 2.9%. Optimism driven by fading tariff impact and tax cuts."
-        },
-        {
-            "rank": 2,
-            "source": "American Bankers Association Economic Advisory Committee (March 2026)",
-            "prediction": "US economy to grow 2.2% in 2026 with unemployment peaking at 4.5%",
-            "detail": "Moderate growth expected amid persistent inflation and geopolitical risks."
-        },
-        {
-            "rank": 3,
-            "source": "Morgan Stanley Research (Nov 2025 update)",
-            "prediction": "Global GDP growth to reach 3.2% in 2026",
-            "detail": "US growth at 1.8%, supported by AI productivity gains and consumer spending."
-        },
-        {
-            "rank": 4,
-            "source": "J.P. Morgan Global Research",
-            "prediction": "35% probability of US/global recession in 2026",
-            "detail": "Sticky inflation remains a key theme; oil demand surplus expected."
-        },
-        {
-            "rank": 5,
-            "source": "RSM US Chief Economist (Dec 2025 update)",
-            "prediction": "US growth rebound to 2.2% in 2026; recession risk down to 30%",
-            "detail": "Fiscal and monetary easing to drive the rebound."
-        },
-        {
-            "rank": 6,
-            "source": "Vanguard Economists (Jan 2026)",
-            "prediction": "Solid US growth with slightly lower inflation in 2026",
-            "detail": "Tariffs will push inflation but tax cuts provide boost."
-        },
-        {
-            "rank": 7,
-            "source": "Bloomberg Economists Survey (March 2026)",
-            "prediction": "Fed to deliver exactly two rate cuts in 2026",
-            "detail": "Economists expect faster easing than futures markets currently price."
-        },
-        {
-            "rank": 8,
-            "source": "Deloitte Global Economics (Dec 2025)",
-            "prediction": "China GDP growth at 4.5% in 2026 driven by fiscal stimulus",
-            "detail": "Slightly firmer renminbi expected."
-        },
-        {
-            "rank": 9,
-            "source": "Jeremy Siegel (Wharton, Dec 2025 interview)",
-            "prediction": "US economy looks strong for 2026 with 2–2.5% growth",
-            "detail": "After short-term bumps, 2026 outlook is positive."
-        },
-        {
-            "rank": 10,
-            "source": "Atlantic Council / Goldman Sachs (March 2026)",
-            "prediction": "Trump to double down on tariffs in 2026",
-            "detail": "China manufacturing and AI competition to support its growth."
-        }
+        {"rank": 1, "source": "Goldman Sachs Research (Feb 2026)", "prediction": "US GDP to grow 2.8% in 2026 (above consensus 2.2%)", "detail": "Global GDP forecast at 2.9%. Optimism driven by fading tariff impact and tax cuts."},
+        {"rank": 2, "source": "American Bankers Association Economic Advisory Committee (March 2026)", "prediction": "US economy to grow 2.2% in 2026 with unemployment peaking at 4.5%", "detail": "Moderate growth expected amid persistent inflation and geopolitical risks."},
+        {"rank": 3, "source": "Morgan Stanley Research (Nov 2025 update)", "prediction": "Global GDP growth to reach 3.2% in 2026", "detail": "US growth at 1.8%, supported by AI productivity gains and consumer spending."},
+        {"rank": 4, "source": "J.P. Morgan Global Research", "prediction": "35% probability of US/global recession in 2026", "detail": "Sticky inflation remains a key theme; oil demand surplus expected."},
+        {"rank": 5, "source": "RSM US Chief Economist (Dec 2025 update)", "prediction": "US growth rebound to 2.2% in 2026; recession risk down to 30%", "detail": "Fiscal and monetary easing to drive the rebound."},
+        {"rank": 6, "source": "Vanguard Economists (Jan 2026)", "prediction": "Solid US growth with slightly lower inflation in 2026", "detail": "Tariffs will push inflation but tax cuts provide boost."},
+        {"rank": 7, "source": "Bloomberg Economists Survey (March 2026)", "prediction": "Fed to deliver exactly two rate cuts in 2026", "detail": "Economists expect faster easing than futures markets currently price."},
+        {"rank": 8, "source": "Deloitte Global Economics (Dec 2025)", "prediction": "China GDP growth at 4.5% in 2026 driven by fiscal stimulus", "detail": "Slightly firmer renminbi expected."},
+        {"rank": 9, "source": "Jeremy Siegel (Wharton, Dec 2025 interview)", "prediction": "US economy looks strong for 2026 with 2–2.5% growth", "detail": "After short-term bumps, 2026 outlook is positive."},
+        {"rank": 10, "source": "Atlantic Council / Goldman Sachs (March 2026)", "prediction": "Trump to double down on tariffs in 2026", "detail": "China manufacturing and AI competition to support its growth."}
     ]
    
     st.caption("These are direct quotes and forecasts from leading institutions and economists reported in March 2026. Updates automatically reflect latest available data.")
