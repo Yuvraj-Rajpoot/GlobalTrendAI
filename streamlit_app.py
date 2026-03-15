@@ -17,7 +17,6 @@ st.set_page_config(page_title="GlobalTrend AI", layout="wide", page_icon="🌍")
 
 # ====================== PERMANENT READ STORAGE ======================
 READ_FILE = "read_history.json"
-
 def load_read_ids():
     if os.path.exists(READ_FILE):
         try:
@@ -34,7 +33,7 @@ def save_read_ids(read_ids):
     except:
         pass
 
-# ====================== PREMIUM CSS ======================
+# ====================== PREMIUM CSS (with perfect world map fix) ======================
 st.markdown("""
 <style>
     .stApp { background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%); color: #e0e0ff; }
@@ -57,6 +56,24 @@ st.markdown("""
     .footer-tabs { margin-top: 2rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 15px; }
     .prediction-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(251,191,36,0.3); border-radius: 16px; padding: 1.4rem; margin-bottom: 1rem; transition: all 0.3s; }
     .prediction-card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(251,191,36,0.2); }
+
+    /* ====================== PERFECT WORLD ACTIVITY MAP CSS ====================== */
+    /* No scrolling + whole world fills the container exactly */
+    .leaflet-container {
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 20px !important;
+        box-shadow: 0 25px 50px -12px rgb(59 130 246 / 0.4) !important;
+        overflow: hidden !important;
+        background: #0f0f1e !important;
+    }
+    div[data-testid="stMarkdownContainer"] > div > div > div > div > iframe,
+    .stFolium,
+    .leaflet-container {
+        max-width: 100% !important;
+        max-height: 100% !important;
+        overflow: hidden !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -67,7 +84,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ====================== MAIN TABS (NOW 6 TABS) ======================
+# ====================== MAIN TABS ======================
 tab_news, tab_live, tab_stocks, tab_trending, tab_map, tab_predictions = st.tabs([
     "📰 News Archive",
     "📺 Live YouTube TV Streams",
@@ -83,7 +100,7 @@ with tab_news:
         st.header("⚙️ Dashboard Controls")
         articles_per_page = st.slider("Articles per page", 6, 24, 18)
         refresh_seconds = st.slider("Auto-refresh every", 30, 180, 60, step=15)
-        groq_api_key = st.text_input("")
+        groq_api_key = st.text_input("Groq API Key (optional)", type="password")
        
         if st.button("🔄 Refresh View Now", use_container_width=True, type="primary"):
             st.rerun()
@@ -98,8 +115,7 @@ with tab_news:
         from streamlit_autorefresh import st_autorefresh
         st_autorefresh(interval=refresh_seconds * 1000, limit=None, key="newsrefresh")
     except:
-        st.sidebar.warning("~ Yuvraj Rajpoot")
-
+        st.sidebar.warning("pip install streamlit-autorefresh")
     FEEDS = [
         {"name": "BBC World", "url": "https://feeds.bbci.co.uk/news/world/rss.xml"},
         {"name": "Reuters World", "url": "https://feeds.reuters.com/Reuters/worldNews"},
@@ -115,12 +131,9 @@ with tab_news:
         {"name": "News18 World", "url": "https://www.news18.com/rss/world.xml"},
         {"name": "Moscow Times", "url": "https://www.themoscowtimes.com/rss/news"},
     ]
-
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"}
-
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"}
     def get_article_id(article):
         return hashlib.md5((article.get('title','') + article.get('link','')).encode()).hexdigest()[:12]
-
     def get_exact_time(article):
         parsed = article.get('published_parsed')
         if parsed:
@@ -131,7 +144,6 @@ with tab_news:
                 pass
         raw = article.get('published') or article.get('pubDate') or article.get('updated')
         return raw.replace(' GMT', '').replace(' UTC', '').strip()[:60] if raw else "Date not available"
-
     def fetch_single_feed(feed):
         try:
             r = requests.get(feed["url"], headers=headers, timeout=10)
@@ -144,7 +156,6 @@ with tab_news:
         except:
             return []
         return []
-
     @st.cache_data(ttl=120, show_spinner=False)
     def fetch_latest_news():
         all_entries = []
@@ -163,31 +174,23 @@ with tab_news:
                 unique.append(item)
         unique.sort(key=lambda x: x.get('published_parsed', (0,0,0,0,0,0)), reverse=True)
         return unique[:50]
-
     if "all_news" not in st.session_state: st.session_state.all_news = []
     if "read_ids" not in st.session_state: st.session_state.read_ids = load_read_ids()
     if "previous_ids" not in st.session_state: st.session_state.previous_ids = set()
     if 'current_page' not in st.session_state: st.session_state.current_page = 1
-
     latest = fetch_latest_news()
     new_articles_list = [article for article in latest if article.get("article_id") not in {a.get("article_id") for a in st.session_state.all_news}]
     if new_articles_list:
         st.session_state.all_news = new_articles_list + st.session_state.all_news
-
     max_articles = articles_per_page * 6
     if len(st.session_state.all_news) > max_articles:
         st.session_state.all_news = st.session_state.all_news[:max_articles]
-
     if len(new_articles_list) > 0 and len(st.session_state.previous_ids) > 0:
         st.toast(f"🔔 {len(new_articles_list)} brand new stories added on Page 1!", icon="🆕")
-
     st.session_state.previous_ids = {a.get("article_id") for a in st.session_state.all_news}
-
     page = st.session_state.current_page
     current_page_articles = st.session_state.all_news[(page-1)*articles_per_page : page*articles_per_page]
-
     st.subheader(f"🌐 Page {page}/6 • Live Trending Worldwide • {datetime.now().strftime('%H:%M:%S')} • {len(st.session_state.all_news)}/{max_articles} stored • {sum(1 for a in st.session_state.all_news if a.get('article_id') not in st.session_state.read_ids)} unread")
-
     cols = st.columns(3)
     for i, article in enumerate(current_page_articles):
         aid = article.get("article_id")
@@ -202,10 +205,10 @@ with tab_news:
                 st.markdown(f'<div class="article-title">{article.get("title", "No title")}</div>', unsafe_allow_html=True)
                 desc = re.sub(r'<[^>]+>', '', article.get("description", "") or "")
                 st.markdown(f'<div class="article-desc">{desc[:185]}{"..." if len(desc) > 185 else ""}</div>', unsafe_allow_html=True)
-                
+               
                 btn_label = "✓ Mark as Read" if is_unread else "✓ Marked as Read"
                 btn_type = "primary" if is_unread else "secondary"
-                
+               
                 if st.button(
                     btn_label,
                     key=f"read_{aid}_{page}",
@@ -218,10 +221,8 @@ with tab_news:
                         save_read_ids(st.session_state.read_ids)
                         st.toast("✅ Marked as read forever!", icon="✅")
                         st.rerun()
-
             if article.get("link"):
                 st.link_button("Read Full Story →", article["link"], use_container_width=True)
-
     st.divider()
     st.markdown('<div class="footer-tabs">', unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -237,7 +238,6 @@ with tab_news:
             st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
     st.divider()
-
     if groq_api_key and st.session_state.all_news and st.button("✨ Generate Smart World Digest", use_container_width=True):
         try:
             from groq import Groq
@@ -275,7 +275,7 @@ with tab_news:
 # ====================== LIVE TV TAB ======================
 with tab_live:
     st.title("📺 Live YouTube TV Streams")
-    st.caption("Just click on the youtube sign and enjoy multiple live tv channels on the same page...")
+    st.caption("All streams using verified direct embeds")
     cols = st.columns(2)
     live_channels = [
         ("Al Jazeera English Live", "https://www.youtube.com/embed/gCNeDWCI0vo"),
@@ -335,7 +335,7 @@ with tab_stocks:
     st.dataframe(styled, use_container_width=True, hide_index=True)
     st.caption("Data from Yahoo Finance • Updates live on every refresh")
 
-# ====================== NEW TOP 10 TRENDING TAB ======================
+# ====================== TOP 10 TRENDING TAB ======================
 with tab_trending:
     st.title("🔥 Top 10 Trending News Worldwide")
     st.caption("Real-time ranked by latest arrival • Updates automatically on every refresh")
@@ -354,11 +354,11 @@ with tab_trending:
     else:
         st.info("Waiting for news... Click Refresh View Now once")
 
-# ====================== WORLD NEWS ACTIVITY MAP TAB ======================
+# ====================== WORLD NEWS ACTIVITY MAP TAB (PERFECTLY IMPROVED) ======================
 with tab_map:
     st.title("🌍 Real-Time World News Activity Map")
     st.caption("Signals show news intensity (🟢 Low → 🔴 High) • Click any signal → small popup with exact activity type • Updates live on every refresh")
-    
+   
     COUNTRY_COORDS = {
         "USA": [37.0902, -95.7129], "United States": [37.0902, -95.7129], "Washington": [38.9072, -77.0369],
         "China": [35.8617, 104.1954], "Beijing": [39.9042, 116.4074],
@@ -379,14 +379,12 @@ with tab_map:
         "Canada": [56.1304, -106.3468],
         "South Africa": [-30.5595, 22.9375],
     }
-
     def detect_location(text):
         text = text.lower()
         for country, coords in COUNTRY_COORDS.items():
             if country.lower() in text:
                 return coords, country
         return None, None
-
     if "all_news" in st.session_state and st.session_state.all_news:
         location_groups = {}
         for article in st.session_state.all_news:
@@ -407,12 +405,20 @@ with tab_map:
                 location_groups[key]["count"] += 1
                 location_groups[key]["headlines"].append(title[:120])
                 location_groups[key]["sources"].add(article.get("source_name", "News"))
-
         if location_groups:
-            m = folium.Map(location=[20, 0], zoom_start=2, tiles="CartoDB dark_matter")
-            
+            # ==================== PERFECT MAP (no scroll, whole world fits exactly) ====================
+            m = folium.Map(
+                location=[20, 0],
+                zoom_start=2,
+                tiles="CartoDB dark_matter",
+                min_zoom=1,
+                max_zoom=18,
+                max_bounds=[[-90, -180], [90, 180]],      # prevents repeating countries
+                max_bounds_viscosity=1.0
+            )
+           
             max_count = max(g["count"] for g in location_groups.values()) or 1
-            
+           
             for data in location_groups.values():
                 intensity = data["count"] / max_count
                 if intensity < 0.25:
@@ -423,9 +429,9 @@ with tab_map:
                     color = "#f97316"
                 else:
                     color = "#ef4444"
-                
+               
                 radius = max(8, min(25, 8 + data["count"] * 2.5))
-                
+               
                 popup_html = f"""
                 <div style="min-width:280px; font-family: sans-serif;">
                     <h4 style="margin:0; color:#facc15;">{data['country']}</h4>
@@ -436,7 +442,7 @@ with tab_map:
                     {'<br>'.join([f"• {h}" for h in data["headlines"][:4]])}
                 </div>
                 """
-                
+               
                 folium.CircleMarker(
                     location=[data["lat"], data["lon"]],
                     radius=radius,
@@ -447,9 +453,12 @@ with tab_map:
                     fill_opacity=0.85,
                     weight=3
                 ).add_to(m)
-
-            st_folium(m, width="100%", height=680, returned_objects=["last_object_clicked"])
-            
+           
+            # Force the entire world to exactly fill the container (max zoom-out = container size)
+            m.fit_bounds([[-90, -180], [90, 180]], padding=(0.02, 0.02))
+           
+            st_folium(m, width="100%", height=500, returned_objects=["last_object_clicked"])
+           
             st.caption("🟢 = Low activity 🟡 = Medium 🟠 = High 🔴 = Very High • Click any signal to open the activity popup")
         else:
             st.info("No country-specific stories detected yet. As soon as new articles mentioning countries arrive, colored signals will appear automatically.")
@@ -460,7 +469,7 @@ with tab_map:
 with tab_predictions:
     st.title("🔮 Real Economist Forecasts")
     st.caption("Actual predictions made by leading economists & institutions (Goldman Sachs, Morgan Stanley, ABA, J.P. Morgan, IMF & more) as of March 2026 • Sourced directly from news & reports • No AI generation")
-    
+   
     real_forecasts = [
         {
             "rank": 1,
@@ -523,9 +532,9 @@ with tab_predictions:
             "detail": "China manufacturing and AI competition to support its growth."
         }
     ]
-    
+   
     st.caption("These are direct quotes and forecasts from leading institutions and economists reported in March 2026. Updates automatically reflect latest available data.")
-    
+   
     for forecast in real_forecasts:
         with st.container(border=True):
             st.markdown(f'<div class="prediction-card">', unsafe_allow_html=True)
