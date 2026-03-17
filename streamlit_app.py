@@ -290,24 +290,6 @@ with tab_news:
     # Calculate unread count
     unread_count = sum(1 for a in st.session_state.all_news if a.get('article_id') not in st.session_state.read_ids)
     
-    # ====================== HEADER WITH USER'S LOCAL TIME (FIXED) ======================
-    st.markdown(f"""
-    <h3 style="margin-bottom: 0;">🌐 Page {page}/{total_pages} • Live Trending Worldwide • 
-    <span id="local-clock">{datetime.now().strftime('%H:%M:%S')}</span> • 
-    {len(st.session_state.all_news)}/{max_articles} stored (24h) • {unread_count} unread</h3>
-    <script>
-        function updateClock() {{
-            var now = new Date();
-            var h = String(now.getHours()).padStart(2, '0');
-            var m = String(now.getMinutes()).padStart(2, '0');
-            var s = String(now.getSeconds()).padStart(2, '0');
-            var el = document.getElementById('local-clock');
-            if (el) el.textContent = h + ':' + m + ':' + s;
-        }}
-        updateClock();
-        setInterval(updateClock, 1000);
-    </script>
-    """, unsafe_allow_html=True)
     
     # Quick stats bar
     stats_col1, stats_col2, stats_col3, stats_col4 = st.columns(4)
