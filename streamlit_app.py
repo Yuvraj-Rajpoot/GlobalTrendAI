@@ -12,7 +12,6 @@ import pandas as pd
 import yfinance as yf
 import folium
 from streamlit_folium import st_folium
-from streamlit_autorefresh import st_autorefresh
 
 # ====================== PERFORMANCE OPTIMIZATIONS ======================
 # Reduce timeout and increase workers for faster loading
@@ -63,150 +62,26 @@ def save_cached_news(news_list):
 # ====================== PREMIUM CSS (with perfect world map fix) ======================
 st.markdown("""
 <style>
-    .stApp {
-        background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
-        color: #e0e0ff;
-    }
-    .main-header {
-        background: linear-gradient(90deg, #1e3a8a, #3b82f6, #60a5fa);
-        padding: 2rem 0;
-        border-radius: 20px;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
-        position: relative;
-        overflow: hidden;
-    }
-    .main-header::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
-        animation: shine 8s linear infinite;
-    }
-    @keyframes shine {
-        0% { transform: translateX(-30%) translateY(-30%); }
-        100% { transform: translateX(30%) translateY(30%); }
-    }
-    .title {
-        font-size: 3.2rem;
-        font-weight: 800;
-        background: linear-gradient(90deg, #fff, #a5f3fc);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-align: center;
-        margin: 0;
-    }
-    .live-dot {
-        display: inline-block;
-        width: 12px;
-        height: 12px;
-        background: #22c55e;
-        border-radius: 50%;
-        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.4);
-        animation: pulse 2s infinite;
-        margin-right: 8px;
-    }
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.4); }
-    }
-    div[data-testid="stContainer"] {
-        background: rgba(255,255,255,0.06) !important;
-        backdrop-filter: blur(20px) !important;
-        border: 1px solid rgba(255,255,255,0.1) !important;
-        border-radius: 20px !important;
-        padding: 1.8rem !important;
-        transition: all 0.4s cubic-bezier(0.4,0,0.2,1) !important;
-        height: 100% !important;
-        position: relative;
-        overflow: hidden;
-    }
-    div[data-testid="stContainer"]:hover {
-        transform: translateY(-12px) scale(1.03) !important;
-        box-shadow: 0 25px 50px -12px rgb(59 130 246 / 0.4) !important;
-    }
-    .unread-badge {
-        position: absolute;
-        top: 16px;
-        right: 16px;
-        background: linear-gradient(90deg, #facc15, #eab308);
-        color: #1e2937;
-        font-size: 0.75rem;
-        font-weight: 700;
-        padding: 4px 14px;
-        border-radius: 9999px;
-        box-shadow: 0 0 15px rgba(250,204,21,0.6);
-    }
-    .new-badge {
-        position: absolute;
-        top: 16px;
-        right: 16px;
-        background: linear-gradient(90deg, #ef4444, #f97316);
-        color: white;
-        font-size: 0.75rem;
-        font-weight: 700;
-        padding: 4px 14px;
-        border-radius: 9999px;
-        box-shadow: 0 0 15px rgba(239,68,68,0.7);
-        animation: newpulse 2s infinite;
-    }
-    @keyframes newpulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.08); }
-    }
-    .source-pill {
-        display: inline-block;
-        background: rgba(147,197,253,0.15);
-        color: #93c5fd;
-        font-size: 0.75rem;
-        padding: 3px 12px;
-        border-radius: 9999px;
-        margin-bottom: 8px;
-    }
-    .article-time {
-        color: #94a3b8;
-        font-size: 0.85rem;
-        margin-bottom: 12px;
-        font-weight: 500;
-    }
-    .article-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        line-height: 1.4;
-        color: #e0f2fe;
-        margin-bottom: 12px;
-    }
-    .article-desc {
-        color: #cbd5e1;
-        font-size: 0.95rem;
-        line-height: 1.55;
-    }
-    .stLinkButton > button {
-        background: linear-gradient(90deg, #3b82f6, #60a5fa) !important;
-        border-radius: 9999px !important;
-        font-weight: 600 !important;
-    }
-    .footer-tabs {
-        margin-top: 2rem;
-        padding: 1rem;
-        background: rgba(255,255,255,0.05);
-        border-radius: 15px;
-    }
-    .prediction-card {
-        background: rgba(255,255,255,0.06);
-        border: 1px solid rgba(251,191,36,0.3);
-        border-radius: 16px;
-        padding: 1.4rem;
-        margin-bottom: 1rem;
-        transition: all 0.3s;
-    }
-    .prediction-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 10px 30px rgba(251,191,36,0.2);
-    }
+    .stApp { background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%); color: #e0e0ff; }
+    .main-header { background: linear-gradient(90deg, #1e3a8a, #3b82f6, #60a5fa); padding: 2rem 0; border-radius: 20px; margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3); position: relative; overflow: hidden; }
+    .main-header::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%); animation: shine 8s linear infinite; }
+    @keyframes shine { 0% { transform: translateX(-30%) translateY(-30%); } 100% { transform: translateX(30%) translateY(30%); } }
+    .title { font-size: 3.2rem; font-weight: 800; background: linear-gradient(90deg, #fff, #a5f3fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; margin: 0; }
+    .live-dot { display: inline-block; width: 12px; height: 12px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.4); animation: pulse 2s infinite; margin-right: 8px; }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.4); } }
+    div[data-testid="stContainer"] { background: rgba(255,255,255,0.06) !important; backdrop-filter: blur(20px) !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 20px !important; padding: 1.8rem !important; transition: all 0.4s cubic-bezier(0.4,0,0.2,1) !important; height: 100% !important; position: relative; overflow: hidden; }
+    div[data-testid="stContainer"]:hover { transform: translateY(-12px) scale(1.03) !important; box-shadow: 0 25px 50px -12px rgb(59 130 246 / 0.4) !important; }
+    .unread-badge { position: absolute; top: 16px; right: 16px; background: linear-gradient(90deg, #facc15, #eab308); color: #1e2937; font-size: 0.75rem; font-weight: 700; padding: 4px 14px; border-radius: 9999px; box-shadow: 0 0 15px rgba(250,204,21,0.6); }
+    .new-badge { position: absolute; top: 16px; right: 16px; background: linear-gradient(90deg, #ef4444, #f97316); color: white; font-size: 0.75rem; font-weight: 700; padding: 4px 14px; border-radius: 9999px; box-shadow: 0 0 15px rgba(239,68,68,0.7); animation: newpulse 2s infinite; }
+    @keyframes newpulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+    .source-pill { display: inline-block; background: rgba(147,197,253,0.15); color: #93c5fd; font-size: 0.75rem; padding: 3px 12px; border-radius: 9999px; margin-bottom: 8px; }
+    .article-time { color: #94a3b8; font-size: 0.85rem; margin-bottom: 12px; font-weight: 500; }
+    .article-title { font-size: 1.25rem; font-weight: 700; line-height: 1.4; color: #e0f2fe; margin-bottom: 12px; }
+    .article-desc { color: #cbd5e1; font-size: 0.95rem; line-height: 1.55; }
+    .stLinkButton > button { background: linear-gradient(90deg, #3b82f6, #60a5fa) !important; border-radius: 9999px !important; font-weight: 600 !important; }
+    .footer-tabs { margin-top: 2rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 15px; }
+    .prediction-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(251,191,36,0.3); border-radius: 16px; padding: 1.4rem; margin-bottom: 1rem; transition: all 0.3s; }
+    .prediction-card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(251,191,36,0.2); }
     .leaflet-container {
         width: 100% !important;
         height: 100% !important;
@@ -242,6 +117,7 @@ tab_news, tab_live, tab_stocks, tab_trending, tab_map, tab_predictions = st.tabs
     "🔮 Real Economist Forecasts"
 ])
 
+# ====================== NEWS ARCHIVE TAB ======================
 # ====================== NEWS ARCHIVE TAB ======================
 with tab_news:
     
@@ -345,7 +221,7 @@ with tab_news:
         st.header("⚙️ Dashboard Controls")
         articles_per_page = st.slider("Articles per page", 6, 24, 18)
         refresh_seconds = st.slider("Auto-refresh every", 30, 180, 60, step=15)
-        groq_api_key = st.text_input("🔑 Groq API Key (Optional)", type="password")
+        groq_api_key = st.text_input("", type="password")
         
         if st.button("🔄 Refresh View Now", use_container_width=True, type="primary"):
             st.cache_data.clear()
@@ -359,12 +235,14 @@ with tab_news:
                 st.rerun()
         
         st.markdown("---")
-        st.markdown(f"⏱️ **Auto-refresh:** Every {refresh_seconds}s")
-        st.markdown("---")
         st.markdown("~ Yuvraj Rajpoot")
     
     # ====================== AUTO REFRESH ======================
-    st_autorefresh(interval=refresh_seconds * 1000, limit=None, key="newsrefresh")
+    try:
+        from streamlit_autorefresh import st_autorefresh
+        st_autorefresh(interval=refresh_seconds * 1000, limit=None, key="newsrefresh")
+    except:
+        pass
     
     # ====================== FETCH AND MERGE NEWS ======================
     latest = fetch_latest_news()
@@ -584,9 +462,8 @@ Headlines:
 {headlines}
 
 Format exactly like this:
-Story Title
+**Story Title**
 1-2 sentence insight + global impact."""
-                    
                     response = client.chat.completions.create(
                         model="llama-3.3-70b-versatile",
                         messages=[{"role": "user", "content": prompt}],
@@ -620,6 +497,8 @@ Story Title
         unsafe_allow_html=True
     )
 
+# ====================== LIVE TV TAB ======================
+# ====================== LIVE TV TAB ======================
 # ====================== LIVE TV TAB ======================
 with tab_live:
     st.title("📺 Live YouTube TV Streams")
@@ -670,13 +549,15 @@ with tab_live:
     
     with row4_cols[1]:
         st.subheader("Career 247 - Latest Uploads")
+        # Using channel uploads playlist (UC -> UU conversion for uploads playlist)
+        # Channel ID: UCHyu2gwfAkOXWroIjvxVUCg
+        # Uploads Playlist: UUHyu2gwfAkOXWroIjvxVUCg
         st.components.v1.iframe(
             "https://www.youtube.com/embed/videoseries?list=UUHyu2gwfAkOXWroIjvxVUCg",
             height=380,
             scrolling=False
         )
         st.caption("📺 Latest uploads playlist • Click to browse & play videos")
-
 # ====================== STOCK MARKETS TAB ======================
 with tab_stocks:
     st.title("📈 Live Markets – Gold, Silver, Crypto & Stocks")
@@ -1439,7 +1320,8 @@ with tab_trending:
     
     st.caption("📡 Data Sources: ESRI World Imagery • RainViewer Radar API • Open-Meteo Weather API • OpenStreetMap Nominatim • Click anywhere for instant weather!")
 
-# ====================== WORLD NEWS ACTIVITY MAP TAB ======================
+
+# ====================== WORLD NEWS ACTIVITY MAP TAB (PERFECTLY IMPROVED) # # ====================== WORLD NEWS ACTIVITY MAP TAB ======================
 with tab_map:
     st.markdown("""
     <style>
@@ -2091,6 +1973,7 @@ with tab_map:
     else:
         st.info("⏳ Waiting for news data... Go to 'News Archive' tab and let it load, then return here to see the activity map.")
 
+# ====================== REAL ECONOMIST FORECASTS TAB ======================
 # ====================== REAL WORLD PREDICTIONS TAB ======================
 with tab_predictions:
     st.title("🔮 Top 10 World Predictions for 2025-2026")
@@ -2421,3 +2304,5 @@ with tab_predictions:
     Predictions are inherently uncertain and should not be taken as investment or life advice. Sources include major news outlets (Bloomberg, Reuters, CNBC, Financial Times), 
     official company communications, published books, podcasts, and social media posts from verified accounts. Last updated: March 2025.
     """)
+
+st.caption("GlobalTrend AI • Complete real-time global dashboard")
