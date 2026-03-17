@@ -1,7 +1,9 @@
 streamlit
+streamlit-autorefresh
 feedparser
 requests
-pandas
 yfinance
+pandas
 folium
 streamlit-folium
+groq
