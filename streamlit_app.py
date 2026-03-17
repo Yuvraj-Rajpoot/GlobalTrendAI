@@ -291,23 +291,24 @@ with tab_news:
     unread_count = sum(1 for a in st.session_state.all_news if a.get('article_id') not in st.session_state.read_ids)
     
     # ====================== HEADER WITH USER'S LOCAL TIME (FIXED) ======================
-    st.components.v1.html(f"""
-    <h3 style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e0e0ff; font-size: 1.17em; font-weight: 600;">
-        🌐 Page {page}/{total_pages} • Live Trending Worldwide • 
-        Refreshed at <span id="refresh-time" style="color: #60a5fa;">--:--:--</span> • 
-        {len(st.session_state.all_news)}/{max_articles} stored (24h) • {unread_count} unread
-    </h3>
-    <script>
-        (function() {{
-            var now = new Date();
-            var h = String(now.getHours()).padStart(2, '0');
-            var m = String(now.getMinutes()).padStart(2, '0');
-            var s = String(now.getSeconds()).padStart(2, '0');
-            document.getElementById('refresh-time').textContent = h + ':' + m + ':' + s;
-        }})();
-    </script>
-    """, height=35)
-    
+     header_html = f"""
+<h3 style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e0e0ff; font-size: 1.17em; font-weight: 600;">
+🌐 Page {page}/{total_pages} • Live Trending Worldwide • 
+Refreshed at <span id="refresh-time" style="color: #60a5fa;">--:--:--</span> • 
+{len(st.session_state.all_news)}/{max_articles} stored (24h) • {unread_count} unread
+</h3>
+<script>
+(function() {{
+    var now = new Date();
+    var h = String(now.getHours()).padStart(2, '0');
+    var m = String(now.getMinutes()).padStart(2, '0');
+    var s = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('refresh-time').textContent = h + ':' + m + ':' + s;
+}})();
+</script>
+"""
+    st.components.v1.html(header_html, height=35)
+
     # Quick stats bar
     stats_col1, stats_col2, stats_col3, stats_col4 = st.columns(4)
     with stats_col1:
@@ -318,7 +319,7 @@ with tab_news:
         st.metric("✅ Read", len(st.session_state.all_news) - unread_count)
     with stats_col4:
         st.metric("📄 Total Pages", total_pages)
-    
+
     st.markdown("---")
     
     # ====================== DISPLAY ARTICLES IN GRID ======================
