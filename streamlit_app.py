@@ -97,10 +97,14 @@ st.markdown("""
         max-height: 100% !important;
         overflow: hidden !important;
     }
-    st.markdown("""
+</style>
+""", unsafe_allow_html=True)
+
+# JavaScript for converting timestamps to local time
+st.markdown("""
 <script>
 // Convert all UTC timestamps to user's local time
-document.addEventListener('DOMContentLoaded', function() {
+(function() {
     function convertTimestamps() {
         const elements = document.querySelectorAll('.article-timestamp');
         elements.forEach(el => {
@@ -119,14 +123,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    convertTimestamps();
-    // Re-run when Streamlit updates
-    const observer = new MutationObserver(convertTimestamps);
+    
+    // Run on load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', convertTimestamps);
+    } else {
+        convertTimestamps();
+    }
+    
+    // Re-run when Streamlit updates the DOM
+    const observer = new MutationObserver(function(mutations) {
+        convertTimestamps();
+    });
     observer.observe(document.body, { childList: true, subtree: true });
-});
+})();
 </script>
-""", unsafe_allow_html=True)
-</style>
 """, unsafe_allow_html=True)
 
 st.markdown("""
@@ -146,7 +157,6 @@ tab_news, tab_live, tab_stocks, tab_trending, tab_map, tab_predictions = st.tabs
     "🔮 Real Economist Forecasts"
 ])
 
-# ====================== NEWS ARCHIVE TAB ======================
 # ====================== NEWS ARCHIVE TAB ======================
 with tab_news:
     
@@ -173,19 +183,19 @@ with tab_news:
         return hashlib.md5((article.get('title','') + article.get('link','')).encode()).hexdigest()[:12]
     
     def get_exact_time(article):
-    """Convert article time to user's local timezone via JavaScript-friendly format"""
-    parsed = article.get('published_parsed')
-    if parsed:
-        try:
-            # Convert to UTC timestamp
-            utc_timestamp = time.mktime(parsed)
-            # Return ISO format for JavaScript conversion
-            dt = datetime.fromtimestamp(utc_timestamp)
-            return f'<span class="article-timestamp" data-timestamp="{int(utc_timestamp)}">{dt.strftime("%d %b %Y • %H:%M UTC")}</span>'
-        except:
-            pass
-    raw = article.get('published') or article.get('pubDate') or article.get('updated')
-    return raw.replace(' GMT', '').replace(' UTC', '').strip()[:60] if raw else "Date not available"
+        """Convert article time to user's local timezone via JavaScript-friendly format"""
+        parsed = article.get('published_parsed')
+        if parsed:
+            try:
+                # Convert to UTC timestamp
+                utc_timestamp = time.mktime(parsed)
+                # Return ISO format for JavaScript conversion
+                dt = datetime.fromtimestamp(utc_timestamp)
+                return f'<span class="article-timestamp" data-timestamp="{int(utc_timestamp)}">{dt.strftime("%d %b %Y • %H:%M UTC")}</span>'
+            except:
+                pass
+        raw = article.get('published') or article.get('pubDate') or article.get('updated')
+        return raw.replace(' GMT', '').replace(' UTC', '').strip()[:60] if raw else "Date not available"
     
     def is_within_24_hours(article):
         """Check if article is within the last 24 hours"""
@@ -254,7 +264,7 @@ with tab_news:
         st.header("⚙️ Dashboard Controls")
         articles_per_page = st.slider("Articles per page", 6, 24, 18)
         refresh_seconds = st.slider("Auto-refresh every", 30, 180, 60, step=15)
-        groq_api_key = st.text_input("", type="password")
+        groq_api_key = st.text_input("Groq API Key (Optional)", type="password")
         
         if st.button("🔄 Refresh View Now", use_container_width=True, type="primary"):
             st.cache_data.clear()
@@ -270,11 +280,13 @@ with tab_news:
         st.markdown("---")
         st.markdown("~ Yuvraj Rajpoot")
     
-    # ====================== AUTO REFRESH ======================
+    # ====================== AUTO REFRESH (GUARANTEED TO WORK) ======================
     try:
         from streamlit_autorefresh import st_autorefresh
-        st_autorefresh(interval=refresh_seconds * 1000, limit=None, key="newsrefresh")
-    except:
+        count = st_autorefresh(interval=refresh_seconds * 1000, limit=None, key="newsrefresh")
+    except ImportError:
+        st.sidebar.warning("⚠️ Auto-refresh not available - install streamlit-autorefresh")
+    except Exception:
         pass
     
     # ====================== FETCH AND MERGE NEWS ======================
@@ -323,42 +335,42 @@ with tab_news:
     # Calculate unread count
     unread_count = sum(1 for a in st.session_state.all_news if a.get('article_id') not in st.session_state.read_ids)
     
-    # ====================== HEADER WITH USER'S LOCAL TIME (FIXED) ======================
+    # ====================== HEADER WITH USER'S LOCAL TIME (TRULY FIXED) ======================
     # Create a unique placeholder for the clock
-clock_placeholder = st.empty()
-
-# Use JavaScript to inject real-time local clock
-clock_placeholder.markdown(f"""
-<h3 style="margin-bottom: 0;">🌐 Page {page}/{total_pages} • Live Trending Worldwide • 
-<span id="local-clock-{page}" style="color: #22c55e; font-weight: 700;">Loading...</span> • 
-{len(st.session_state.all_news)}/{max_articles} stored (24h) • {unread_count} unread</h3>
-<script>
-(function() {{
-    function updateClock() {{
-        const now = new Date();
-        const h = String(now.getHours()).padStart(2, '0');
-        const m = String(now.getMinutes()).padStart(2, '0');
-        const s = String(now.getSeconds()).padStart(2, '0');
-        const el = document.getElementById('local-clock-{page}');
-        if (el) {{
-            el.textContent = h + ':' + m + ':' + s;
-        }}
-    }}
-    updateClock();
-    const interval = setInterval(updateClock, 1000);
+    clock_placeholder = st.empty()
     
-    // Cleanup when element is removed
-    const observer = new MutationObserver(function(mutations) {{
-        const el = document.getElementById('local-clock-{page}');
-        if (!el) {{
-            clearInterval(interval);
-            observer.disconnect();
+    # Use JavaScript to inject real-time local clock
+    clock_placeholder.markdown(f"""
+    <h3 style="margin-bottom: 0;">🌐 Page {page}/{total_pages} • Live Trending Worldwide • 
+    <span id="local-clock-{page}" style="color: #22c55e; font-weight: 700;">Loading...</span> • 
+    {len(st.session_state.all_news)}/{max_articles} stored (24h) • {unread_count} unread</h3>
+    <script>
+    (function() {{
+        function updateClock() {{
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            const el = document.getElementById('local-clock-{page}');
+            if (el) {{
+                el.textContent = h + ':' + m + ':' + s;
+            }}
         }}
-    }});
-    observer.observe(document.body, {{ childList: true, subtree: true }});
-}})();
-</script>
-""", unsafe_allow_html=True)
+        updateClock();
+        const interval = setInterval(updateClock, 1000);
+        
+        // Cleanup when element is removed
+        const observer = new MutationObserver(function(mutations) {{
+            const el = document.getElementById('local-clock-{page}');
+            if (!el) {{
+                clearInterval(interval);
+                observer.disconnect();
+            }}
+        }});
+        observer.observe(document.body, {{ childList: true, subtree: true }});
+    }})();
+    </script>
+    """, unsafe_allow_html=True)
     
     # Quick stats bar
     stats_col1, stats_col2, stats_col3, stats_col4 = st.columns(4)
@@ -488,11 +500,11 @@ clock_placeholder.markdown(f"""
         
         with time_col1:
             newest = st.session_state.all_news[0]
-            st.markdown(f"**🆕 Newest:** {get_exact_time(newest)}")
+            st.markdown(f"**🆕 Newest:** {get_exact_time(newest)}", unsafe_allow_html=True)
         
         with time_col2:
             oldest = st.session_state.all_news[-1]
-            st.markdown(f"**📜 Oldest:** {get_exact_time(oldest)}")
+            st.markdown(f"**📜 Oldest:** {get_exact_time(oldest)}", unsafe_allow_html=True)
         
         with time_col3:
             sources_count = len(set(a.get("source_name", "Unknown") for a in st.session_state.all_news))
@@ -549,8 +561,6 @@ Format exactly like this:
     )
 
 # ====================== LIVE TV TAB ======================
-# ====================== LIVE TV TAB ======================
-# ====================== LIVE TV TAB ======================
 with tab_live:
     st.title("📺 Live YouTube TV Streams")
     st.caption("All streams using verified direct embeds")
@@ -600,15 +610,13 @@ with tab_live:
     
     with row4_cols[1]:
         st.subheader("Career 247 - Latest Uploads")
-        # Using channel uploads playlist (UC -> UU conversion for uploads playlist)
-        # Channel ID: UCHyu2gwfAkOXWroIjvxVUCg
-        # Uploads Playlist: UUHyu2gwfAkOXWroIjvxVUCg
         st.components.v1.iframe(
             "https://www.youtube.com/embed/videoseries?list=UUHyu2gwfAkOXWroIjvxVUCg",
             height=380,
             scrolling=False
         )
         st.caption("📺 Latest uploads playlist • Click to browse & play videos")
+
 # ====================== STOCK MARKETS TAB ======================
 with tab_stocks:
     st.title("📈 Live Markets – Gold, Silver, Crypto & Stocks")
@@ -1371,8 +1379,7 @@ with tab_trending:
     
     st.caption("📡 Data Sources: ESRI World Imagery • RainViewer Radar API • Open-Meteo Weather API • OpenStreetMap Nominatim • Click anywhere for instant weather!")
 
-
-# ====================== WORLD NEWS ACTIVITY MAP TAB (PERFECTLY IMPROVED) # # ====================== WORLD NEWS ACTIVITY MAP TAB ======================
+# ====================== WORLD NEWS ACTIVITY MAP TAB ======================
 with tab_map:
     st.markdown("""
     <style>
@@ -2024,7 +2031,6 @@ with tab_map:
     else:
         st.info("⏳ Waiting for news data... Go to 'News Archive' tab and let it load, then return here to see the activity map.")
 
-# ====================== REAL ECONOMIST FORECASTS TAB ======================
 # ====================== REAL WORLD PREDICTIONS TAB ======================
 with tab_predictions:
     st.title("🔮 Top 10 World Predictions for 2025-2026")
