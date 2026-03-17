@@ -238,15 +238,27 @@ with tab_news:
         st.markdown("~ Yuvraj Rajpoot")
     
     # ====================== AUTO REFRESH ======================
-   st.markdown(f"""
-<script>
-    setTimeout(function(){{
-        window.location.reload();
-    }}, {refresh_seconds * 1000});
-</script>
-""", unsafe_allow_html=True)
+   import time as time_module
 
-st.sidebar.markdown(f"⏱️ Auto-refresh: Every {refresh_seconds}s")
+# Initialize last refresh time
+if 'last_refresh_time' not in st.session_state:
+    st.session_state.last_refresh_time = time_module.time()
+
+# Check if it's time to refresh
+current_time = time_module.time()
+time_since_refresh = current_time - st.session_state.last_refresh_time
+
+if time_since_refresh >= refresh_seconds:
+    st.session_state.last_refresh_time = current_time
+    st.rerun()
+
+# Display countdown timer
+time_remaining = refresh_seconds - int(time_since_refresh)
+st.sidebar.markdown(f"⏱️ **Next auto-refresh in:** {time_remaining}s")
+
+# Trigger rerun every second to update countdown
+time_module.sleep(1)
+st.rerun()
     
     # ====================== FETCH AND MERGE NEWS ======================
     latest = fetch_latest_news()
