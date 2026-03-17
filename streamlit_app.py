@@ -107,34 +107,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ====================== SIDEBAR CONTROLS (MOVED HERE) ======================
-with st.sidebar:
-    st.header("⚙️ Dashboard Controls")
-    articles_per_page = st.slider("Articles per page", 6, 24, 18)
-    refresh_seconds = st.slider("Auto-refresh every (seconds)", 30, 180, 60, step=15)
-    groq_api_key = st.text_input("🔑 Groq API Key (optional)", type="password")
-    
-    if st.button("🔄 Refresh View Now", use_container_width=True, type="primary"):
-        st.cache_data.clear()
-        st.rerun()
-    
-    if st.button("✅ Mark ALL as Read", use_container_width=True, type="secondary"):
-        if "all_news" in st.session_state and st.session_state.all_news:
-            st.session_state.read_ids.update(a.get("article_id") for a in st.session_state.all_news)
-            save_read_ids(st.session_state.read_ids)
-            st.toast("All articles marked as read forever!", icon="✅")
-            st.rerun()
-    
-    st.markdown("---")
-    st.markdown("~ Yuvraj Rajpoot")
-
-# ====================== AUTO REFRESH ======================
-try:
-    from streamlit_autorefresh import st_autorefresh
-    count = st_autorefresh(interval=refresh_seconds * 1000, limit=None, key="global_refresh")
-except:
-    pass
-
 # ====================== MAIN TABS ======================
 tab_news, tab_live, tab_stocks, tab_trending, tab_map, tab_predictions = st.tabs([
     "📰 News Archive",
@@ -243,7 +215,38 @@ with tab_news:
         st.session_state.previous_ids = set()
     if 'current_page' not in st.session_state: 
         st.session_state.current_page = 1
+    
+    # ====================== SIDEBAR ======================
+    with st.sidebar:
+        st.header("⚙️ Dashboard Controls")
+        articles_per_page = st.slider("Articles per page", 6, 24, 18)
+        refresh_seconds = st.slider("Auto-refresh every", 30, 180, 60, step=15)
+        groq_api_key = st.text_input("", type="password")
+        
+        if st.button("🔄 Refresh View Now", use_container_width=True, type="primary"):
+            st.cache_data.clear()
+            st.rerun()
+        
+        if st.button("✅ Mark ALL as Read", use_container_width=True, type="secondary"):
+            if "all_news" in st.session_state and st.session_state.all_news:
+                st.session_state.read_ids.update(a.get("article_id") for a in st.session_state.all_news)
+                save_read_ids(st.session_state.read_ids)
+                st.toast("All articles marked as read forever!", icon="✅")
+                st.rerun()
+        
+        st.markdown("---")
+        st.markdown("~ Yuvraj Rajpoot")
+    
+    # ====================== AUTO REFRESH ======================
+   st.markdown(f"""
+<script>
+    setTimeout(function(){{
+        window.location.reload();
+    }}, {refresh_seconds * 1000});
+</script>
+""", unsafe_allow_html=True)
 
+st.sidebar.markdown(f"⏱️ Auto-refresh: Every {refresh_seconds}s")
     
     # ====================== FETCH AND MERGE NEWS ======================
     latest = fetch_latest_news()
