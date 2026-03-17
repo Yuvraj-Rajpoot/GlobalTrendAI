@@ -107,6 +107,13 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# ====================== AUTO REFRESH (MOVE THIS BEFORE TABS) ======================
+try:
+    from streamlit_autorefresh import st_autorefresh
+    st_autorefresh(interval=refresh_seconds * 1000, limit=None, key="newsrefresh")
+except:
+    pass
+
 # ====================== MAIN TABS ======================
 tab_news, tab_live, tab_stocks, tab_trending, tab_map, tab_predictions = st.tabs([
     "📰 News Archive",
@@ -221,6 +228,7 @@ with tab_news:
         st.header("⚙️ Dashboard Controls")
         articles_per_page = st.slider("Articles per page", 6, 24, 18)
         refresh_seconds = st.slider("Auto-refresh every", 30, 180, 60, step=15)
+        st.session_state['refresh_seconds'] = refresh_seconds
         groq_api_key = st.text_input("", type="password")
         
         if st.button("🔄 Refresh View Now", use_container_width=True, type="primary"):
@@ -236,13 +244,6 @@ with tab_news:
         
         st.markdown("---")
         st.markdown("~ Yuvraj Rajpoot")
-    
-    # ====================== AUTO REFRESH ======================
-    try:
-        from streamlit_autorefresh import st_autorefresh
-        st_autorefresh(interval=refresh_seconds * 1000, limit=None, key="newsrefresh")
-    except:
-        pass
     
     # ====================== FETCH AND MERGE NEWS ======================
     latest = fetch_latest_news()
