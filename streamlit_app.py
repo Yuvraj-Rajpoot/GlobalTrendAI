@@ -97,6 +97,35 @@ st.markdown("""
         max-height: 100% !important;
         overflow: hidden !important;
     }
+    st.markdown("""
+<script>
+// Convert all UTC timestamps to user's local time
+document.addEventListener('DOMContentLoaded', function() {
+    function convertTimestamps() {
+        const elements = document.querySelectorAll('.article-timestamp');
+        elements.forEach(el => {
+            const timestamp = parseInt(el.dataset.timestamp);
+            if (timestamp) {
+                const date = new Date(timestamp * 1000);
+                const formatted = date.toLocaleString('en-GB', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                }).replace(',', ' •');
+                el.textContent = formatted;
+            }
+        });
+    }
+    convertTimestamps();
+    // Re-run when Streamlit updates
+    const observer = new MutationObserver(convertTimestamps);
+    observer.observe(document.body, { childList: true, subtree: true });
+});
+</script>
+""", unsafe_allow_html=True)
 </style>
 """, unsafe_allow_html=True)
 
@@ -144,15 +173,19 @@ with tab_news:
         return hashlib.md5((article.get('title','') + article.get('link','')).encode()).hexdigest()[:12]
     
     def get_exact_time(article):
-        parsed = article.get('published_parsed')
-        if parsed:
-            try:
-                local_time = time.localtime(time.mktime(parsed))
-                return time.strftime("%d %b %Y • %H:%M", local_time)
-            except:
-                pass
-        raw = article.get('published') or article.get('pubDate') or article.get('updated')
-        return raw.replace(' GMT', '').replace(' UTC', '').strip()[:60] if raw else "Date not available"
+    """Convert article time to user's local timezone via JavaScript-friendly format"""
+    parsed = article.get('published_parsed')
+    if parsed:
+        try:
+            # Convert to UTC timestamp
+            utc_timestamp = time.mktime(parsed)
+            # Return ISO format for JavaScript conversion
+            dt = datetime.fromtimestamp(utc_timestamp)
+            return f'<span class="article-timestamp" data-timestamp="{int(utc_timestamp)}">{dt.strftime("%d %b %Y • %H:%M UTC")}</span>'
+        except:
+            pass
+    raw = article.get('published') or article.get('pubDate') or article.get('updated')
+    return raw.replace(' GMT', '').replace(' UTC', '').strip()[:60] if raw else "Date not available"
     
     def is_within_24_hours(article):
         """Check if article is within the last 24 hours"""
