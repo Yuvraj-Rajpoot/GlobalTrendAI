@@ -291,22 +291,20 @@ with tab_news:
     unread_count = sum(1 for a in st.session_state.all_news if a.get('article_id') not in st.session_state.read_ids)
     
     # ====================== HEADER WITH USER'S LOCAL TIME (FIXED) ======================
-    st.components.v1.html(f"""
+   st.components.v1.html(f"""
 <h3 style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e0e0ff; font-size: 1.17em; font-weight: 600;">
     🌐 Page {page}/{total_pages} • Live Trending Worldwide • 
-    <span id="local-clock" style="color: #60a5fa;">Loading...</span> • 
+    Refreshed at <span id="refresh-time" style="color: #60a5fa;">--:--:--</span> • 
     {len(st.session_state.all_news)}/{max_articles} stored (24h) • {unread_count} unread
 </h3>
 <script>
-    function updateClock() {{
+    (function() {{
         var now = new Date();
         var h = String(now.getHours()).padStart(2, '0');
         var m = String(now.getMinutes()).padStart(2, '0');
         var s = String(now.getSeconds()).padStart(2, '0');
-        document.getElementById('local-clock').textContent = h + ':' + m + ':' + s;
-    }}
-    updateClock();
-    setInterval(updateClock, 1000);
+        document.getElementById('refresh-time').textContent = h + ':' + m + ':' + s;
+    }})();
 </script>
 """, height=35)
     
