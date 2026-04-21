@@ -1276,7 +1276,7 @@ with tab_trending:
                 except:
                     return ''
             
-            styled_df = df_weather.style.applymap(color_temp, subset=['Temp (°C)', 'Feels Like (°C)']).format({
+            styled_df = df_weather.style.map(color_temp, subset=['Temp (°C)', 'Feels Like (°C)']).format({
                 'Temp (°C)': '{:.1f}',
                 'Feels Like (°C)': '{:.1f}',
                 'Wind (km/h)': '{:.1f}',
